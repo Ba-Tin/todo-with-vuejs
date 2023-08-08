@@ -59,7 +59,6 @@ export default {
         content: this.contentName,
       };
       this.onSave(item);
-      this.contentName = "";
     }
   },
   mounted() {
