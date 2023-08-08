@@ -36,9 +36,7 @@
     <modal-form v-if='showModal'
      :closeModal="handleShowModal" 
      :todoEdit="editingTodo"
-     :onSave = "handleSave"
-    @todo-add="handleAddTodo"
-    @todo-update="handleUpdateTodo"/>
+     :onSave = "handleSave"/>
    </div>
 </template>
 <script>
