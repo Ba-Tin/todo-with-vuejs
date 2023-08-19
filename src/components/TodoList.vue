@@ -85,12 +85,12 @@ export default {
         },
         handleCompleteTask(item) {
             if (item.status) {
-                const confirmDelete = confirm("Bạn đã hoàn thành công việc. Bạn có muốn xóa task này đi không?");
+                const confirmDelete = confirm("Bạn đã hoàn thành công việc");
                 if (confirmDelete) {
                     this.todoList = this.todoList.filter((task) => task.id !== item.id);
-                    toast.success("Công việc đã được xóa!", { duration: 1500 });
+                    toast.success("Công đã hoàn thành", { duration: 1500 });
                 } else {
-                    item.status = true;
+                    item.status = false;
                 }
             }
         },
