@@ -25,7 +25,7 @@
                     <td>{{item.content}}</td>
                     <td><input type="checkbox" v-model="item.status"  @change="handleCompleteTask(item)"></td>
                     <td>
-                        <button class="btn btn-secondary" disabled @click="handleUpdatedTodo(item)" style="margin-right:1rem">
+                        <button class="btn btn-secondary" :disabled="isEditDisabled(item)" @click="handleUpdatedTodo(item)" style="margin-right:1rem">
                             <i class="bx bxs-edit"></i> Sửa
                         </button>
                         <button class="btn btn-danger" @click="handleDeleteTodo(item)">
@@ -104,7 +104,10 @@ export default {
                 toast.success('Thêm thành công!', { duration: 1500 });
             }
             this.setShowModal(false);
-        }
+        },
+        isEditDisabled(item) {
+            return item.status;
+        },
     }
 
 }
