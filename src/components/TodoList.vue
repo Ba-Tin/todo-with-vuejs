@@ -4,7 +4,10 @@
         <h1>Todo App</h1>
     </div>
     <div class="text-end ">
-      <button @click="handleAddTodo" class="btn btn-primary">Thêm</button>
+      <button class="btn btn-primary" @click="handleShowCompletedTasks">Công việc đã hoàn thành</button>
+    </div>
+    <div class="text-end mt-4">
+      <button @click="handleAddTodo" class="btn btn-primary mr-5">Thêm</button>  
     </div>
     <div class="row text-center">
         <table class="table table-striped">
@@ -16,13 +19,13 @@
                     <th></th>
                 </tr>
             </thead>
-            <tbody>
-                <tr v-for="(item, index) in todoList" :key="item.id">
+             <tbody>
+                <tr v-for="(item, index) in filteredTodoList" :key="item.id">
                     <td>{{index + 1}}</td>  
                     <td>{{item.content}}</td>
                     <td><input type="checkbox" v-model="item.status"  @change="handleCompleteTask(item)"></td>
                     <td>
-                        <button class="btn btn-secondary" @click="handleUpdatedTodo(item)" style="margin-right:1rem">
+                        <button class="btn btn-secondary" disabled @click="handleUpdatedTodo(item)" style="margin-right:1rem">
                             <i class="bx bxs-edit"></i> Sửa
                         </button>
                         <button class="btn btn-danger" @click="handleDeleteTodo(item)">
@@ -31,6 +34,8 @@
                     </td>
                 </tr>
             </tbody>
+
+
         </table>
     </div>
     <modal-form v-if='showModal'
@@ -42,44 +47,41 @@
 <script>
 import ModalForm from './ModalForm.vue';
 import { toast } from 'vue3-toastify';
+import { mapState, mapGetters, mapActions } from 'vuex';
 export default {
-    data() {
-        return {
-            showModal: false,
-            todoList: [{
-                content: "Đi chợ",
-                status: false
-            },
-            {
-                content: "Nấu cơm",
-                status: false
-            }, {
-                content: "Rửa chén",
-                status: false
-            }],
-            editingTodo: null,
-        }
 
-    },
     components: {
         ModalForm
     },
+    computed: {
+        ...mapState(['todoList', 'editingTodo', 'showModal', 'showCompletedTasks']),
+        ...mapGetters(['completedTodos']),
+        filteredTodoList() {
+            return this.showCompletedTasks ? this.completedTodos : this.todoList;
+        },
+    },
     methods: {
+        ...mapActions(['setShowModal', 'setEditingTodo', 'addTodo', 'updateTodo', 'deleteTodo', 'setShowCompletedTasks']),
         handleShowModal() {
-            this.showModal = !this.showModal
+            this.setShowModal(!this.showModal);
+        },
+        handleShowCompletedTasks() {
+            this.setShowCompletedTasks(!this.showCompletedTasks)
         },
         handleAddTodo() {
-            this.editingTodo = null;
-            this.showModal = true;
+            this.setEditingTodo(null);
+            this.setShowModal(true);
         },
         handleUpdatedTodo(item) {
-            this.editingTodo = item;
-            this.showModal = true;
+            this.setEditingTodo(item);
+            this.setShowModal(true);
         },
         handleDeleteTodo(item) {
-            this.todoList = this.todoList.filter((task) => task.id !== item.id);
-            toast.success("Công việc đã được xóa!", { duration: 1500 });
-
+            const confirmDelete = confirm("Bạn có chắc muốn xóa công việc này?");
+            if (confirmDelete) {
+                this.deleteTodo(item.id);
+                toast.success("Công việc đã được xóa!", { duration: 1500 });
+            }
         },
         handleCompleteTask(item) {
             if (item.status) {
@@ -94,23 +96,17 @@ export default {
         },
         handleSave(item) {
             if (this.editingTodo) {
-                const updatedTodo = this.todoList.map((u) => {
-                    if (u.id === this.editingTodo.id) {
-                        return { ...u, ...item };
-                    }
-                    return u;
-                });
-                this.todoList = updatedTodo;
+                this.updateTodo({ ...this.editingTodo, ...item });
                 toast.success('Cập nhật thành công!', { duration: 1500 });
             } else {
                 const newTodo = { ...item, id: Date.now(), status: false };
-                this.todoList = ([newTodo, ...this.todoList]);
+                this.addTodo(newTodo);
                 toast.success('Thêm thành công!', { duration: 1500 });
             }
-            this.showModal = false
+            this.setShowModal(false);
         }
-
     }
+
 }
 </script>
 <style lang="css"></style>
