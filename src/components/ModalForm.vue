@@ -1,27 +1,27 @@
 <template lang="">
     <!-- The Modal -->
-<div class="modal" id="myModal">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <!-- Modal Header -->
-      <div class="modal-header">
-        <h4 class="modal-title">Modal form</h4>
-        <button type="button" @click="closeModal" class="btn-close"></button>
-      </div>
+      <div class="modal">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <!-- Modal Header -->
+            <div class="modal-header">
+              <h4 class="modal-title">Modal form</h4>
+              <button type="button" @click="closeModal" class="btn-close"></button>
+            </div>
 
-      <!-- Modal body -->
-      <div class="modal-body input-group">
-        <input type="text" class="form-control" placeholder="Thêm công việc" v-model="contentName" >
-      </div>
+            <!-- Modal body -->
+            <div class="modal-body input-group">
+              <input type="text" class="form-control" placeholder="Thêm công việc" v-model="contentName" >
+            </div>
 
-      <!-- Modal footer -->
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" @click="saveTodo">{{ todoEdit !== null ? 'Lưu' : 'Thêm công việc' }}</button>
-        <button type="button" class="btn btn-danger" @click="closeModal">Close</button>
+            <!-- Modal footer -->
+            <div class="modal-footer">
+              <button type="button" class="btn btn-primary" @click="saveTodo">{{ todoEdit !== null ? 'Lưu' : 'Thêm công việc' }}</button>
+              <button type="button" class="btn btn-danger" @click="closeModal">Close</button>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
 </template>
 <script>
 import { toast } from 'vue3-toastify';

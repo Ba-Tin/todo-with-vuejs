@@ -3,11 +3,14 @@
     <div class="row text-center mb-2">
         <h1>Todo App</h1>
     </div>
-    <div class="text-end ">
+    <div class="text-center ">
+      <button @click="handleAddTodo" class="btn btn-primary mr-5">Thêm</button>  
+    </div>
+    <div class="text-center mt-4">
       <button class="btn btn-primary" @click="handleShowCompletedTasks">Công việc đã hoàn thành</button>
     </div>
-    <div class="text-end mt-4">
-      <button @click="handleAddTodo" class="btn btn-primary mr-5">Thêm</button>  
+    <div class="text-center p-3">
+      <input class="rounded p-2" v-model="searchText" v-on:input="debouncedHandleSearch" placeholder="Search...">
     </div>
     <div class="row text-center">
         <table class="table table-striped">
@@ -19,13 +22,13 @@
                     <th></th>
                 </tr>
             </thead>
-             <tbody>
+             <tbody >
                 <tr v-for="(item, index) in filteredTodoList" :key="item.id">
                     <td>{{index + 1}}</td>  
                     <td>{{item.content}}</td>
-                    <td><input type="checkbox" v-model="item.status"  @change="handleCompleteTask(item)"></td>
+                    <td><input type="checkbox" v-model="item.status" @change="handleCompleteTask(item)"></td>
                     <td>
-                        <button class="btn btn-secondary" disabled @click="handleUpdatedTodo(item)" style="margin-right:1rem">
+                        <button class="btn btn-secondary" @click="handleUpdatedTodo(item)" style="margin-right:1rem">
                             <i class="bx bxs-edit"></i> Sửa
                         </button>
                         <button class="btn btn-danger" @click="handleDeleteTodo(item)">
@@ -34,9 +37,11 @@
                     </td>
                 </tr>
             </tbody>
-
-
         </table>
+        <div class="pagination text-end">
+            <button class="btn" @click="prevPage" :disabled="currentPage === 1">Previous</button>
+            <button class="btn" @click="nextPage" :disabled="currentPage === totalPages">Next</button>
+        </div>
     </div>
     <modal-form v-if='showModal'
      :closeModal="handleShowModal" 
@@ -47,21 +52,38 @@
 <script>
 import ModalForm from './ModalForm.vue';
 import { toast } from 'vue3-toastify';
-import { mapState, mapGetters, mapActions } from 'vuex';
+import _debounce from 'lodash/debounce';
+import { mapState, mapGetters, mapActions, mapMutations } from 'vuex';
 export default {
-
+    data() {
+        return {
+            searchText: '',
+        };
+    },
     components: {
-        ModalForm
+        ModalForm,
     },
     computed: {
-        ...mapState(['todoList', 'editingTodo', 'showModal', 'showCompletedTasks']),
+        ...mapState(['todoList', 'editingTodo', 'showModal', 'showCompletedTasks', 'isLoading', 'currentPage', 'totalPages',]),
         ...mapGetters(['completedTodos']),
         filteredTodoList() {
             return this.showCompletedTasks ? this.completedTodos : this.todoList;
         },
+        isLoading() {
+            return this.todoList.length === 0;
+        },
     },
     methods: {
-        ...mapActions(['setShowModal', 'setEditingTodo', 'addTodo', 'updateTodo', 'deleteTodo', 'setShowCompletedTasks']),
+        ...mapActions(['getAllTodo', 'searchAndFetch', 'setShowModal', 'setEditingTodo', 'addTodo', 'updateTodo', 'updateTodoStatus', 'deleteTodo', 'setShowCompletedTasks']),
+        ...mapMutations(['SET_CURRENT_PAGE']),
+        prevPage() {
+            this.SET_CURRENT_PAGE(this.currentPage - 1);
+            this.getAllTodo();
+        },
+        nextPage() {
+            this.SET_CURRENT_PAGE(this.currentPage + 1);
+            this.getAllTodo();
+        },
         handleShowModal() {
             this.setShowModal(!this.showModal);
         },
@@ -76,36 +98,59 @@ export default {
             this.setEditingTodo(item);
             this.setShowModal(true);
         },
-        handleDeleteTodo(item) {
+        debouncedHandleSearch: _debounce(function () {
+            if (this.searchText) {
+                this.searchAndFetch(this.searchText);
+            } else {
+                this.getAllTodo();
+            }
+        }, 300),
+        async handleDeleteTodo(item) {
             const confirmDelete = confirm("Bạn có chắc muốn xóa công việc này?");
             if (confirmDelete) {
-                this.deleteTodo(item.id);
-                toast.success("Công việc đã được xóa!", { duration: 1500 });
-            }
-        },
-        handleCompleteTask(item) {
-            if (item.status) {
-                const confirmDelete = confirm("Bạn đã hoàn thành công việc. Bạn có muốn xóa task này đi không?");
-                if (confirmDelete) {
-                    this.todoList = this.todoList.filter((task) => task.id !== item.id);
+                const error = await this.deleteTodo(item.id);
+                if (!error) {
                     toast.success("Công việc đã được xóa!", { duration: 1500 });
+                    this.getAllTodo();
                 } else {
-                    item.status = true;
+                    toast.error(error, { duration: 1500 });
                 }
             }
         },
-        handleSave(item) {
+        async handleCompleteTask(item) {
+            await this.updateTodoStatus(item.id);
+
+        },
+        async handleSave(item) {
             if (this.editingTodo) {
-                this.updateTodo({ ...this.editingTodo, ...item });
-                toast.success('Cập nhật thành công!', { duration: 1500 });
+                const error = await this.updateTodo({ id: this.editingTodo.id, todo: { ...this.editingTodo, ...item } });
+                if (error) {
+                    toast.error(error, { duration: 1500 });
+                } else {
+                    toast.success('Cập nhật thành công!', { duration: 1500 });
+
+                }
             } else {
-                const newTodo = { ...item, id: Date.now(), status: false };
-                this.addTodo(newTodo);
-                toast.success('Thêm thành công!', { duration: 1500 });
+                const newTodo = { ...item };
+                const error = await this.addTodo(newTodo);
+                if (error) {
+                    toast.error(error, { duration: 1500 });
+                } else {
+                    toast.success('Thêm thành công!', { duration: 1500 });
+                }
             }
             this.setShowModal(false);
-        }
+            this.getAllTodo();
+        },
+
+        async fetchAllTodo() {
+            await this.getAllTodo();
+        },
+    },
+    created() {
+        this.fetchAllTodo();
     }
+
 
 }
 </script>

@@ -1,18 +1,10 @@
 export default {
 
-    todoList: [{
-        content: "Đi chợ",
-        status: false
-    },
-    {
-        content: "Nấu cơm",
-        status: false
-    }, {
-        content: "Rửa chén",
-        status: true
-    }],
+    todoList: [],
     showModal: false,
     editingTodo: null,
-    showCompletedTasks: false
+    showCompletedTasks: false,
+    currentPage: 1,
+    totalPages: 3,
 
 }
